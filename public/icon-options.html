@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Challenge Icon Options</title>
+  <style>
+    body { background: #1a1a2e; color: white; font-family: system-ui; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 30px; }
+    .option { background: #16213e; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .option h2 { margin: 0 0 12px; font-size: 14px; color: #aaa; }
+    .icons { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+    .icon-group { text-align: center; }
+    .icon-group span { display: block; font-size: 10px; color: #666; margin-top: 4px; }
+    .diamond { width: 28px; height: 28px; transform: rotate(45deg); border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 2px 6px rgba(0,0,0,0.6); display: inline-flex; align-items: center; justify-content: center; margin: 8px; }
+    .diamond .inner { transform: rotate(-45deg); color: white; font-size: 13px; font-weight: bold; }
+    .circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 2px 6px rgba(0,0,0,0.6); display: inline-flex; align-items: center; justify-content: center; margin: 8px; }
+    .circle .inner { color: white; font-size: 13px; font-weight: bold; }
+    .hex { width: 28px; height: 28px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); border: none; display: inline-flex; align-items: center; justify-content: center; margin: 8px; }
+    .hex .inner { color: white; font-size: 12px; font-weight: bold; }
+    .square { width: 24px; height: 24px; border-radius: 4px; border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 2px 6px rgba(0,0,0,0.6); display: inline-flex; align-items: center; justify-content: center; margin: 8px; }
+    .square .inner { color: white; font-size: 12px; font-weight: bold; }
+    .star { width: 32px; height: 32px; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); display: inline-flex; align-items: center; justify-content: center; margin: 8px; }
+    .star .inner { color: white; font-size: 10px; font-weight: bold; margin-top: 4px; }
+    .shield { width: 26px; height: 30px; clip-path: polygon(50% 0%, 100% 10%, 100% 60%, 50% 100%, 0% 60%, 0% 10%); display: inline-flex; align-items: center; justify-content: center; margin: 8px; }
+    .shield .inner { color: white; font-size: 11px; font-weight: bold; margin-top: 2px; }
+    .pill { width: 36px; height: 22px; border-radius: 11px; border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 2px 6px rgba(0,0,0,0.6); display: inline-flex; align-items: center; justify-content: center; margin: 8px; }
+    .pill .inner { color: white; font-size: 11px; font-weight: bold; }
+    .pin { width: 24px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 2px 6px rgba(0,0,0,0.6); display: inline-flex; align-items: center; justify-content: center; margin: 8px; }
+    .pin .inner { transform: rotate(45deg); color: white; font-size: 11px; font-weight: bold; }
+    .triangle { width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 28px solid; display: inline-block; margin: 8px; position: relative; }
+    .triangle .inner { position: absolute; top: 10px; left: -4px; color: white; font-size: 10px; font-weight: bold; }
+
+    .fixed { background: #f59e0b; }
+    .variable { background: #2563eb; }
+    .multiplier { background: #9333ea; }
+    .steal { background: #dc2626; }
+  </style>
+</head>
+<body>
+  <h1>Choose a Challenge Icon Style</h1>
+
+  <!-- Option 1: Current diamonds -->
+  <div class="option">
+    <h2>Option 1 — Diamonds (current)</h2>
+    <div class="icons">
+      <div class="icon-group"><div class="diamond fixed"><span class="inner">$</span></div><span>Fixed</span></div>
+      <div class="icon-group"><div class="diamond variable"><span class="inner">?</span></div><span>Variable</span></div>
+      <div class="icon-group"><div class="diamond multiplier"><span class="inner">×</span></div><span>Multiplier</span></div>
+      <div class="icon-group"><div class="diamond steal"><span class="inner">!</span></div><span>Steal</span></div>
+    </div>
+  </div>
+
+  <!-- Option 2: Circles with emoji -->
+  <div class="option">
+    <h2>Option 2 — Circles with emoji</h2>
+    <div class="icons">
+      <div class="icon-group"><div class="circle fixed"><span class="inner">💰</span></div><span>Fixed</span></div>
+      <div class="icon-group"><div class="circle variable"><span class="inner">🎲</span></div><span>Variable</span></div>
+      <div class="icon-group"><div class="circle multiplier"><span class="inner">⚡</span></div><span>Multiplier</span></div>
+      <div class="icon-group"><div class="circle steal"><span class="inner">🔥</span></div><span>Steal</span></div>
+    </div>
+  </div>
+
+  <!-- Option 3: Hexagons -->
+  <div class="option">
+    <h2>Option 3 — Hexagons with symbols</h2>
+    <div class="icons">
+      <div class="icon-group"><div class="hex fixed"><span class="inner">$</span></div><span>Fixed</span></div>
+      <div class="icon-group"><div class="hex variable"><span class="inner">?</span></div><span>Variable</span></div>
+      <div class="icon-group"><div class="hex multiplier"><span class="inner">×</span></div><span>Multiplier</span></div>
+      <div class="icon-group"><div class="hex steal"><span class="inner">!</span></div><span>Steal</span></div>
+    </div>
+  </div>
+
+  <!-- Option 4: Rounded squares with letters -->
+  <div class="option">
+    <h2>Option 4 — Rounded squares with letters</h2>
+    <div class="icons">
+      <div class="icon-group"><div class="square fixed"><span class="inner">F</span></div><span>Fixed</span></div>
+      <div class="icon-group"><div class="square variable"><span class="inner">V</span></div><span>Variable</span></div>
+      <div class="icon-group"><div class="square multiplier"><span class="inner">M</span></div><span>Multiplier</span></div>
+      <div class="icon-group"><div class="square steal"><span class="inner">S</span></div><span>Steal</span></div>
+    </div>
+  </div>
+
+  <!-- Option 5: Stars -->
+  <div class="option">
+    <h2>Option 5 — Stars</h2>
+    <div class="icons">
+      <div class="icon-group"><div class="star fixed"><span class="inner">$</span></div><span>Fixed</span></div>
+      <div class="icon-group"><div class="star variable"><span class="inner">?</span></div><span>Variable</span></div>
+      <div class="icon-group"><div class="star multiplier"><span class="inner">×</span></div><span>Multiplier</span></div>
+      <div class="icon-group"><div class="star steal"><span class="inner">!</span></div><span>Steal</span></div>
+    </div>
+  </div>
+
+  <!-- Option 6: Shields -->
+  <div class="option">
+    <h2>Option 6 — Shields</h2>
+    <div class="icons">
+      <div class="icon-group"><div class="shield fixed"><span class="inner">$</span></div><span>Fixed</span></div>
+      <div class="icon-group"><div class="shield variable"><span class="inner">?</span></div><span>Variable</span></div>
+      <div class="icon-group"><div class="shield multiplier"><span class="inner">×</span></div><span>Multiplier</span></div>
+      <div class="icon-group"><div class="shield steal"><span class="inner">!</span></div><span>Steal</span></div>
+    </div>
+  </div>
+
+  <!-- Option 7: Pills -->
+  <div class="option">
+    <h2>Option 7 — Pills with text</h2>
+    <div class="icons">
+      <div class="icon-group"><div class="pill fixed"><span class="inner">FIX</span></div><span>Fixed</span></div>
+      <div class="icon-group"><div class="pill variable"><span class="inner">VAR</span></div><span>Variable</span></div>
+      <div class="icon-group"><div class="pill multiplier"><span class="inner">MUL</span></div><span>Multiplier</span></div>
+      <div class="icon-group"><div class="pill steal"><span class="inner">STL</span></div><span>Steal</span></div>
+    </div>
+  </div>
+
+  <!-- Option 8: Map pins -->
+  <div class="option">
+    <h2>Option 8 — Map pins</h2>
+    <div class="icons">
+      <div class="icon-group"><div class="pin fixed"><span class="inner">$</span></div><span>Fixed</span></div>
+      <div class="icon-group"><div class="pin variable"><span class="inner">?</span></div><span>Variable</span></div>
+      <div class="icon-group"><div class="pin multiplier"><span class="inner">×</span></div><span>Multiplier</span></div>
+      <div class="icon-group"><div class="pin steal"><span class="inner">!</span></div><span>Steal</span></div>
+    </div>
+  </div>
+
+  <!-- Option 9: Circles with bold symbols -->
+  <div class="option">
+    <h2>Option 9 — Circles with distinct symbols</h2>
+    <div class="icons">
+      <div class="icon-group"><div class="circle fixed"><span class="inner">★</span></div><span>Fixed</span></div>
+      <div class="icon-group"><div class="circle variable"><span class="inner">◆</span></div><span>Variable</span></div>
+      <div class="icon-group"><div class="circle multiplier"><span class="inner">⬆</span></div><span>Multiplier</span></div>
+      <div class="icon-group"><div class="circle steal"><span class="inner">⚔</span></div><span>Steal</span></div>
+    </div>
+  </div>
+
+  <!-- Option 10: Minimal dots with pulsing border -->
+  <div class="option">
+    <h2>Option 10 — Glowing orbs (no symbol, color only)</h2>
+    <div class="icons">
+      <div class="icon-group">
+        <div style="width:24px;height:24px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px #f59e0b, 0 0 16px #f59e0b55;margin:8px;display:inline-block;"></div>
+        <span>Fixed</span>
+      </div>
+      <div class="icon-group">
+        <div style="width:24px;height:24px;border-radius:50%;background:#2563eb;box-shadow:0 0 8px #2563eb, 0 0 16px #2563eb55;margin:8px;display:inline-block;"></div>
+        <span>Variable</span>
+      </div>
+      <div class="icon-group">
+        <div style="width:24px;height:24px;border-radius:50%;background:#9333ea;box-shadow:0 0 8px #9333ea, 0 0 16px #9333ea55;margin:8px;display:inline-block;"></div>
+        <span>Multiplier</span>
+      </div>
+      <div class="icon-group">
+        <div style="width:24px;height:24px;border-radius:50%;background:#dc2626;box-shadow:0 0 8px #dc2626, 0 0 16px #dc262655;margin:8px;display:inline-block;"></div>
+        <span>Steal</span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

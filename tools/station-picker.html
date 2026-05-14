@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Station Coordinate Picker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { margin: 0; font-family: monospace; display: flex; height: 100vh; }
+    #map { flex: 1; }
+    #panel { width: 400px; overflow-y: auto; padding: 10px; background: #1a1a1a; color: #eee; font-size: 12px; }
+    #panel h3 { margin: 0 0 10px; color: #FFD700; }
+    .station-btn { display: block; width: 100%; text-align: left; padding: 4px 8px; margin: 2px 0; background: #333; color: #eee; border: 1px solid #555; cursor: pointer; font-size: 11px; }
+    .station-btn:hover { background: #444; }
+    .station-btn.assigned { background: #1a3a1a; border-color: #4a4; }
+    .station-btn.active { background: #3a1a1a; border-color: #a44; }
+    #coords { position: fixed; bottom: 10px; left: 10px; background: #000; color: #0f0; padding: 5px 10px; font-size: 14px; z-index: 9999; }
+    #output { white-space: pre; font-size: 10px; margin-top: 10px; background: #222; padding: 8px; max-height: 300px; overflow-y: auto; }
+    #search { width: 100%; padding: 4px; margin-bottom: 8px; background: #222; color: #eee; border: 1px solid #555; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="panel">
+    <h3>Station Picker</h3>
+    <p style="font-size:10px;color:#999;">Click a station button, then click its location on the map.</p>
+    <input id="search" placeholder="Filter stations..." oninput="filterStations()">
+    <div id="station-list"></div>
+    <h3 style="margin-top:16px;">Assigned (<span id="count">0</span>)</h3>
+    <button onclick="exportJSON()" style="padding:4px 8px;margin-bottom:8px;background:#444;color:#eee;border:1px solid #666;cursor:pointer;">Copy JSON</button>
+    <div id="output"></div>
+  </div>
+  <div id="coords">Click map...</div>
+
+  <script>
+    const SVG_W = 1408.57;
+    const SVG_H = 1539.082;
+
+    const map = L.map('map', {
+      crs: L.CRS.Simple,
+      minZoom: -2,
+      maxZoom: 4,
+    });
+
+    const bounds = [[0, 0], [SVG_H, SVG_W]];
+    L.imageOverlay('/subway-map.svg', bounds).addTo(map);
+    map.fitBounds(bounds);
+
+    // Stations from the server
+    const STATIONS = [
+      { id: "south-ferry", name: "South Ferry" },
+      { id: "rector-st", name: "Rector St" },
+      { id: "cortlandt-st-1", name: "Cortlandt St" },
+      { id: "chambers-st-123", name: "Chambers St (1/2/3)" },
+      { id: "franklin-st", name: "Franklin St" },
+      { id: "canal-st-1", name: "Canal St (1)" },
+      { id: "houston-st", name: "Houston St" },
+      { id: "christopher-st", name: "Christopher St" },
+      { id: "14-st-7-ave", name: "14 St (7th Ave)" },
+      { id: "18-st-1", name: "18 St (1)" },
+      { id: "23-st-1", name: "23 St (1)" },
+      { id: "28-st-1", name: "28 St (1)" },
+      { id: "34-st-penn", name: "34 St-Penn Station" },
+      { id: "times-sq-42", name: "Times Sq-42 St" },
+      { id: "50-st-1", name: "50 St (1)" },
+      { id: "59-st-columbus", name: "59 St-Columbus Circle" },
+      { id: "66-st-lincoln", name: "66 St-Lincoln Center" },
+      { id: "72-st-1", name: "72 St (1/2/3)" },
+      { id: "79-st-1", name: "79 St" },
+      { id: "86-st-1", name: "86 St (1)" },
+      { id: "96-st-123", name: "96 St (1/2/3)" },
+      { id: "103-st-1", name: "103 St (1)" },
+      { id: "110-st-1", name: "Cathedral Pkwy (110 St)" },
+      { id: "116-st-columbia", name: "116 St-Columbia University" },
+      { id: "125-st-1", name: "125 St (1)" },
+      { id: "137-st", name: "137 St-City College" },
+      { id: "145-st-1", name: "145 St (1)" },
+      { id: "157-st", name: "157 St" },
+      { id: "168-st-1", name: "168 St" },
+      { id: "181-st-1", name: "181 St (1)" },
+      { id: "191-st", name: "191 St" },
+      { id: "dyckman-st", name: "Dyckman St" },
+      { id: "207-st", name: "207 St" },
+      { id: "inwood-207", name: "Inwood-207 St" },
+      { id: "park-place", name: "Park Place" },
+      { id: "fulton-st", name: "Fulton St" },
+      { id: "wall-st-23", name: "Wall St (2/3)" },
+      { id: "central-park-north", name: "Central Park North (110 St)" },
+      { id: "116-st-lenox", name: "116 St (Lenox)" },
+      { id: "125-st-lenox", name: "125 St (Lenox)" },
+      { id: "135-st", name: "135 St" },
+      { id: "145-st-lenox", name: "145 St (Lenox)" },
+      { id: "brooklyn-bridge", name: "Brooklyn Bridge-City Hall" },
+      { id: "bleecker-st", name: "Bleecker St" },
+      { id: "astor-place", name: "Astor Place" },
+      { id: "14-st-union-sq", name: "14 St-Union Sq" },
+      { id: "23-st-6", name: "23 St (6)" },
+      { id: "28-st-6", name: "28 St (6)" },
+      { id: "33-st-6", name: "33 St (6)" },
+      { id: "grand-central", name: "Grand Central-42 St" },
+      { id: "51-st", name: "51 St" },
+      { id: "59-st-lex", name: "59 St (4/5/6)" },
+      { id: "68-st-hunter", name: "68 St-Hunter College" },
+      { id: "77-st", name: "77 St" },
+      { id: "86-st-lex", name: "86 St (4/5/6)" },
+      { id: "96-st-lex", name: "96 St (6)" },
+      { id: "103-st-lex", name: "103 St (6)" },
+      { id: "110-st-lex", name: "110 St (6)" },
+      { id: "116-st-lex", name: "116 St (6)" },
+      { id: "125-st-lex", name: "125 St (4/5/6)" },
+      { id: "world-trade", name: "World Trade Center" },
+      { id: "canal-st-ace", name: "Canal St (A/C/E)" },
+      { id: "spring-st-ace", name: "Spring St (A/C/E)" },
+      { id: "w-4-st", name: "W 4 St-Washington Sq" },
+      { id: "14-st-8-ave", name: "14 St (8th Ave)" },
+      { id: "23-st-ce", name: "23 St (C/E)" },
+      { id: "34-st-8-ave", name: "34 St-Penn Station (A/C/E)" },
+      { id: "42-st-port-auth", name: "42 St-Port Authority" },
+      { id: "50-st-ace", name: "50 St (A/C/E)" },
+      { id: "72-st-bc", name: "72 St (B/C)" },
+      { id: "81-st-museum", name: "81 St-Museum of Natural History" },
+      { id: "86-st-bc", name: "86 St (B/C)" },
+      { id: "96-st-bc", name: "96 St (B/C)" },
+      { id: "103-st-bc", name: "103 St (B/C)" },
+      { id: "110-st-bc", name: "110 St (B/C)" },
+      { id: "116-st-bc", name: "116 St (B/C)" },
+      { id: "125-st-ac", name: "125 St (A/B/C/D)" },
+      { id: "135-st-bc", name: "135 St (B/C)" },
+      { id: "145-st-ac", name: "145 St (A/B/C/D)" },
+      { id: "155-st", name: "155 St" },
+      { id: "163-st", name: "163 St-Amsterdam Av" },
+      { id: "175-st", name: "175 St" },
+      { id: "181-st-a", name: "181 St (A)" },
+      { id: "190-st", name: "190 St" },
+      { id: "city-hall-nrw", name: "City Hall (N/R/W)" },
+      { id: "canal-st-nqrw", name: "Canal St (N/Q/R/W)" },
+      { id: "prince-st", name: "Prince St" },
+      { id: "8-st-nyu", name: "8 St-NYU" },
+      { id: "23-st-nrw", name: "23 St (N/R/W)" },
+      { id: "28-st-nrw", name: "28 St (N/R/W)" },
+      { id: "34-st-herald", name: "34 St-Herald Sq" },
+      { id: "49-st", name: "49 St" },
+      { id: "57-st-7-ave", name: "57 St-7 Ave" },
+      { id: "5-ave-59-st", name: "5 Ave/59 St" },
+      { id: "lexington-59", name: "Lexington Ave/59 St" },
+      { id: "broadway-lafayette", name: "Broadway-Lafayette St" },
+      { id: "2-ave-f", name: "2 Ave (F)" },
+      { id: "delancey-essex", name: "Delancey St-Essex St" },
+      { id: "east-broadway", name: "East Broadway" },
+      { id: "york-st", name: "York St" },
+      { id: "14-st-6-ave", name: "14 St (6th Ave)" },
+      { id: "23-st-fm", name: "23 St (F/M)" },
+      { id: "34-st-6-ave", name: "34 St (B/D/F/M)" },
+      { id: "42-st-bryant", name: "42 St-Bryant Park" },
+      { id: "47-50-rock", name: "47-50 Sts-Rockefeller Ctr" },
+      { id: "7-ave-53", name: "7 Ave (B/D/E)" },
+      { id: "57-st-6-ave", name: "57 St (F)" },
+      { id: "1-ave-l", name: "1 Ave" },
+      { id: "3-ave-l", name: "3 Ave (L)" },
+      { id: "6-ave-l", name: "6 Ave (L)" },
+      { id: "34-st-hudson", name: "34 St-Hudson Yards" },
+      { id: "bowery", name: "Bowery" },
+      { id: "canal-st-jz", name: "Canal St (J/Z)" },
+      { id: "chambers-st-jz", name: "Chambers St (J/Z)" },
+      { id: "broad-st", name: "Broad St" },
+      { id: "wall-st-45", name: "Wall St (4/5)" },
+      { id: "bowling-green", name: "Bowling Green" },
+      { id: "whitehall-st", name: "Whitehall St" },
+      { id: "rector-st-rw", name: "Rector St (R/W)" },
+      { id: "cortlandt-st-rw", name: "Cortlandt St (R/W)" },
+      { id: "spring-st-6", name: "Spring St (6)" },
+      { id: "canal-st-6", name: "Canal St (6)" },
+      { id: "lower-east-side-2", name: "Lower East Side-2 Ave" },
+    ];
+
+    let assigned = {};
+    let activeStation = null;
+    let markers = {};
+
+    // Load saved progress
+    try {
+      const saved = localStorage.getItem('station-coords');
+      if (saved) assigned = JSON.parse(saved);
+    } catch(e) {}
+
+    function renderList() {
+      const search = document.getElementById('search').value.toLowerCase();
+      const list = document.getElementById('station-list');
+      list.innerHTML = '';
+      STATIONS.filter(s => s.name.toLowerCase().includes(search) || s.id.includes(search)).forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'station-btn' + (assigned[s.id] ? ' assigned' : '') + (activeStation === s.id ? ' active' : '');
+        btn.textContent = `${s.name} ${assigned[s.id] ? '✓' : ''}`;
+        btn.onclick = () => { activeStation = s.id; renderList(); };
+        list.appendChild(btn);
+      });
+      document.getElementById('count').textContent = Object.keys(assigned).length;
+    }
+
+    function filterStations() { renderList(); }
+
+    map.on('click', function(e) {
+      if (!activeStation) return;
+      // In CRS.Simple, e.latlng.lat = y (from bottom), e.latlng.lng = x
+      // We store as SVG coords: x = lng, y = SVG_H - lat
+      const svgX = Math.round(e.latlng.lng * 10) / 10;
+      const svgY = Math.round((SVG_H - e.latlng.lat) * 10) / 10;
+
+      assigned[activeStation] = { x: svgX, y: svgY };
+      localStorage.setItem('station-coords', JSON.stringify(assigned));
+
+      // Place marker
+      if (markers[activeStation]) map.removeLayer(markers[activeStation]);
+      markers[activeStation] = L.circleMarker(e.latlng, {
+        radius: 6, fillColor: '#FFD700', color: '#fff', weight: 2, fillOpacity: 0.9
+      }).addTo(map).bindTooltip(STATIONS.find(s => s.id === activeStation)?.name || activeStation);
+
+      // Move to next unassigned
+      const idx = STATIONS.findIndex(s => s.id === activeStation);
+      const next = STATIONS.slice(idx + 1).find(s => !assigned[s.id]);
+      activeStation = next ? next.id : null;
+
+      renderList();
+      updateOutput();
+    });
+
+    map.on('mousemove', function(e) {
+      const svgX = Math.round(e.latlng.lng * 10) / 10;
+      const svgY = Math.round((SVG_H - e.latlng.lat) * 10) / 10;
+      document.getElementById('coords').textContent = `SVG: (${svgX}, ${svgY}) | Active: ${activeStation || 'none'}`;
+    });
+
+    function updateOutput() {
+      const out = document.getElementById('output');
+      const json = JSON.stringify(assigned, null, 2);
+      out.textContent = json;
+    }
+
+    function exportJSON() {
+      navigator.clipboard.writeText(JSON.stringify(assigned, null, 2));
+      alert('Copied to clipboard!');
+    }
+
+    // Render existing markers
+    Object.entries(assigned).forEach(([id, coords]) => {
+      const leafletY = SVG_H - coords.y;
+      markers[id] = L.circleMarker([leafletY, coords.x], {
+        radius: 5, fillColor: '#4a4', color: '#fff', weight: 1.5, fillOpacity: 0.8
+      }).addTo(map).bindTooltip(STATIONS.find(s => s.id === id)?.name || id);
+    });
+
+    renderList();
+    updateOutput();
+  </script>
+</body>
+</html>

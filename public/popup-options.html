@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Challenge Popup Options</title>
+  <style>
+    body { background: #1a1a2e; color: white; font-family: system-ui; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 10px; }
+    p.subtitle { text-align: center; color: #888; font-size: 12px; margin-bottom: 30px; }
+    .option { margin-bottom: 40px; }
+    .option h2 { font-size: 13px; color: #aaa; margin-bottom: 12px; padding-left: 8px; border-left: 3px solid #555; }
+    .phone-frame { width: 375px; height: 280px; margin: 0 auto; background: #222; border-radius: 12px; position: relative; overflow: hidden; border: 2px solid #333; }
+    .map-bg { width: 100%; height: 100%; background: linear-gradient(135deg, #1a2332 0%, #0d1b2a 100%); position: relative; }
+    .map-bg::before { content: ''; position: absolute; top: 20%; left: 10%; right: 10%; height: 2px; background: #334155; opacity: 0.5; }
+    .map-bg::after { content: ''; position: absolute; top: 40%; left: 20%; right: 20%; height: 2px; background: #334155; opacity: 0.3; }
+
+    /* Option 1 - Current white card */
+    .popup-1 { position: absolute; bottom: 0; left: 0; right: 0; background: white; border-radius: 16px 16px 0 0; padding: 16px; color: #333; }
+    .popup-1 .title { font-weight: 700; font-size: 16px; color: #111; }
+    .popup-1 .badge { font-size: 10px; background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 12px; display: inline-block; margin-top: 4px; }
+    .popup-1 .reward { color: #4f46e5; font-weight: 600; font-size: 13px; margin-top: 8px; }
+    .popup-1 .btn { background: #4f46e5; color: white; border: none; border-radius: 8px; padding: 12px; width: 100%; font-weight: 600; margin-top: 12px; font-size: 14px; }
+    .popup-1 .close { position: absolute; top: 12px; right: 16px; color: #aaa; font-size: 20px; }
+
+    /* Option 2 - Dark glass card */
+    .popup-2 { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); border-radius: 16px 16px 0 0; padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .popup-2 .title { font-weight: 700; font-size: 16px; color: white; }
+    .popup-2 .badge { font-size: 10px; background: rgba(37,99,235,0.3); color: #60a5fa; padding: 2px 8px; border-radius: 12px; display: inline-block; margin-top: 4px; }
+    .popup-2 .reward { color: #a78bfa; font-weight: 600; font-size: 13px; margin-top: 8px; }
+    .popup-2 .btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 8px; padding: 12px; width: 100%; font-weight: 600; margin-top: 12px; font-size: 14px; }
+    .popup-2 .close { position: absolute; top: 12px; right: 16px; color: #666; font-size: 20px; }
+
+    /* Option 3 - Floating card with accent bar */
+    .popup-3 { position: absolute; bottom: 12px; left: 12px; right: 12px; background: #1e293b; border-radius: 12px; padding: 16px; padding-left: 20px; border-left: 4px solid #2563eb; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+    .popup-3 .title { font-weight: 700; font-size: 16px; color: white; }
+    .popup-3 .reward { color: #60a5fa; font-weight: 600; font-size: 13px; margin-top: 6px; }
+    .popup-3 .btn { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 12px; width: 100%; font-weight: 600; margin-top: 12px; font-size: 14px; }
+    .popup-3 .close { position: absolute; top: 12px; right: 16px; color: #666; font-size: 20px; }
+
+    /* Option 4 - Minimal bottom sheet with pill handle */
+    .popup-4 { position: absolute; bottom: 0; left: 0; right: 0; background: #111827; border-radius: 16px 16px 0 0; padding: 16px; padding-top: 20px; }
+    .popup-4 .handle { width: 36px; height: 4px; background: #374151; border-radius: 2px; margin: 0 auto 12px; }
+    .popup-4 .title { font-weight: 600; font-size: 15px; color: white; text-align: center; }
+    .popup-4 .reward { color: #34d399; font-weight: 500; font-size: 13px; margin-top: 6px; text-align: center; }
+    .popup-4 .btn { background: white; color: #111; border: none; border-radius: 24px; padding: 12px; width: 100%; font-weight: 700; margin-top: 14px; font-size: 14px; }
+    .popup-4 .close { position: absolute; top: 16px; right: 16px; color: #666; font-size: 18px; }
+
+    /* Option 5 - Neon border card */
+    .popup-5 { position: absolute; bottom: 12px; left: 12px; right: 12px; background: #0f172a; border-radius: 12px; padding: 16px; border: 1px solid #2563eb; box-shadow: 0 0 20px rgba(37,99,235,0.3), inset 0 0 20px rgba(37,99,235,0.05); }
+    .popup-5 .title { font-weight: 700; font-size: 16px; color: white; }
+    .popup-5 .reward { color: #38bdf8; font-weight: 600; font-size: 13px; margin-top: 6px; }
+    .popup-5 .btn { background: transparent; color: #60a5fa; border: 1px solid #2563eb; border-radius: 8px; padding: 12px; width: 100%; font-weight: 600; margin-top: 12px; font-size: 14px; }
+    .popup-5 .close { position: absolute; top: 12px; right: 16px; color: #666; font-size: 20px; }
+
+    /* Option 6 - Split layout with type color header */
+    .popup-6 { position: absolute; bottom: 0; left: 0; right: 0; background: #1e1e2e; border-radius: 16px 16px 0 0; overflow: hidden; }
+    .popup-6 .header { background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .popup-6 .header .title { font-weight: 700; font-size: 14px; color: white; }
+    .popup-6 .header .close { color: rgba(255,255,255,0.7); font-size: 18px; }
+    .popup-6 .body { padding: 14px 16px; }
+    .popup-6 .reward { color: #a78bfa; font-weight: 600; font-size: 13px; }
+    .popup-6 .btn { background: white; color: #1e1e2e; border: none; border-radius: 8px; padding: 11px; width: 100%; font-weight: 700; margin-top: 12px; font-size: 14px; }
+
+    /* Option 7 - Compact toast style */
+    .popup-7 { position: absolute; bottom: 16px; left: 16px; right: 16px; background: #27272a; border-radius: 50px; padding: 10px 12px 10px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.5); }
+    .popup-7 .dot { width: 12px; height: 12px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 8px #2563eb; flex-shrink: 0; }
+    .popup-7 .text { flex: 1; }
+    .popup-7 .title { font-weight: 600; font-size: 13px; color: white; }
+    .popup-7 .reward { color: #a1a1aa; font-size: 11px; margin-top: 1px; }
+    .popup-7 .btn { background: #2563eb; color: white; border: none; border-radius: 20px; padding: 8px 16px; font-weight: 600; font-size: 12px; flex-shrink: 0; }
+
+    /* Option 8 - Game card with XP styling */
+    .popup-8 { position: absolute; bottom: 12px; left: 12px; right: 12px; background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 16px; border: 1px solid #2a2a4a; }
+    .popup-8 .top { display: flex; justify-content: space-between; align-items: start; }
+    .popup-8 .title { font-weight: 700; font-size: 15px; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .popup-8 .xp { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #111; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px; }
+    .popup-8 .reward { color: #94a3b8; font-size: 12px; margin-top: 6px; }
+    .popup-8 .btn { background: linear-gradient(135deg, #f59e0b, #d97706); color: #111; border: none; border-radius: 6px; padding: 11px; width: 100%; font-weight: 800; margin-top: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+    .popup-8 .close { color: #4a5568; font-size: 18px; }
+
+    /* Option 9 - Translucent with large type icon */
+    .popup-9 { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15,23,42,0.92); backdrop-filter: blur(16px); border-radius: 20px 20px 0 0; padding: 20px; display: flex; gap: 14px; align-items: flex-start; }
+    .popup-9 .icon { width: 44px; height: 44px; border-radius: 12px; background: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 12px rgba(37,99,235,0.4); }
+    .popup-9 .icon span { font-size: 20px; }
+    .popup-9 .content { flex: 1; }
+    .popup-9 .title { font-weight: 700; font-size: 15px; color: white; }
+    .popup-9 .reward { color: #94a3b8; font-size: 12px; margin-top: 4px; }
+    .popup-9 .btn { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 10px; width: 100%; font-weight: 600; margin-top: 10px; font-size: 13px; }
+    .popup-9 .close { position: absolute; top: 16px; right: 20px; color: #666; font-size: 20px; }
+
+    /* Option 10 - Centered modal with blur overlay */
+    .popup-10-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; }
+    .popup-10 { background: #1e293b; border-radius: 16px; padding: 24px; width: 85%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); }
+    .popup-10 .title { font-weight: 700; font-size: 17px; color: white; }
+    .popup-10 .reward { color: #60a5fa; font-weight: 500; font-size: 13px; margin-top: 8px; }
+    .popup-10 .btn { background: #2563eb; color: white; border: none; border-radius: 10px; padding: 13px; width: 100%; font-weight: 600; margin-top: 16px; font-size: 14px; }
+    .popup-10 .close { position: absolute; top: -8px; right: -8px; background: #374151; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body>
+  <h1>Challenge Popup Options</h1>
+  <p class="subtitle">Each shows the "pre-start" state: type label, reward hint, and Start button</p>
+
+  <!-- Option 1 -->
+  <div class="option">
+    <h2>Option 1 — White card (current)</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-1">
+        <span class="close">&times;</span>
+        <div class="title">Variable Challenge</div>
+        <span class="badge">variable</span>
+        <div class="reward">50% multiplier on your banked chips</div>
+        <button class="btn">Start Challenge</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Option 2 -->
+  <div class="option">
+    <h2>Option 2 — Dark glass</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-2">
+        <span class="close">&times;</span>
+        <div class="title">Variable Challenge</div>
+        <span class="badge">variable</span>
+        <div class="reward">50% multiplier on your banked chips</div>
+        <button class="btn">Start Challenge</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Option 3 -->
+  <div class="option">
+    <h2>Option 3 — Floating card with accent bar</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-3">
+        <span class="close">&times;</span>
+        <div class="title">Variable Challenge</div>
+        <div class="reward">50% multiplier on your banked chips</div>
+        <button class="btn">Start Challenge</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Option 4 -->
+  <div class="option">
+    <h2>Option 4 — Minimal bottom sheet with pill handle</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-4">
+        <span class="close">&times;</span>
+        <div class="handle"></div>
+        <div class="title">Variable Challenge</div>
+        <div class="reward">50% multiplier on your banked chips</div>
+        <button class="btn">Start Challenge</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Option 5 -->
+  <div class="option">
+    <h2>Option 5 — Neon border</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-5">
+        <span class="close">&times;</span>
+        <div class="title">Variable Challenge</div>
+        <div class="reward">50% multiplier on your banked chips</div>
+        <button class="btn">Start Challenge</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Option 6 -->
+  <div class="option">
+    <h2>Option 6 — Color header split</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-6">
+        <div class="header">
+          <span class="title">Variable Challenge</span>
+          <span class="close">&times;</span>
+        </div>
+        <div class="body">
+          <div class="reward">50% multiplier on your banked chips</div>
+          <button class="btn">Start Challenge</button>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Option 7 -->
+  <div class="option">
+    <h2>Option 7 — Compact toast</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-7">
+        <div class="dot"></div>
+        <div class="text">
+          <div class="title">Variable Challenge</div>
+          <div class="reward">50% multiplier on your banked chips</div>
+        </div>
+        <button class="btn">Start</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Option 8 -->
+  <div class="option">
+    <h2>Option 8 — Game card / XP style</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-8">
+        <div class="top">
+          <div class="title">Variable Challenge</div>
+          <span class="xp">+50%</span>
+        </div>
+        <div class="reward">50% multiplier on your banked chips</div>
+        <button class="btn">Start Challenge</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Option 9 -->
+  <div class="option">
+    <h2>Option 9 — Translucent with icon</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-9">
+        <span class="close">&times;</span>
+        <div class="icon"><span>?</span></div>
+        <div class="content">
+          <div class="title">Variable Challenge</div>
+          <div class="reward">50% multiplier on your banked chips</div>
+          <button class="btn">Start Challenge</button>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- Option 10 -->
+  <div class="option">
+    <h2>Option 10 — Centered modal with blur</h2>
+    <div class="phone-frame"><div class="map-bg">
+      <div class="popup-10-overlay">
+        <div class="popup-10" style="position:relative;">
+          <button class="close">&times;</button>
+          <div class="title">Variable Challenge</div>
+          <div class="reward">50% multiplier on your banked chips</div>
+          <button class="btn">Start Challenge</button>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+</body>
+</html>
