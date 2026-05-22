@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { GameState } from "../../shared/types";
+import type { GameState, GameConfig } from "../../shared/types";
 
 interface Props {
   game: GameState | null;
   teamId: string | null;
   onSelectTeam: (id: string) => void;
+  onCreateGame: (config: GameConfig) => Promise<void>;
+  onStartGame: () => void;
+  onResetGame: () => void;
 }
 
-export default function Lobby({ game, teamId, onSelectTeam }: Props) {
+export default function Lobby({ game, teamId, onSelectTeam, onCreateGame, onStartGame, onResetGame }: Props) {
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const [duration, setDuration] = useState(480);
@@ -18,26 +21,22 @@ export default function Lobby({ game, teamId, onSelectTeam }: Props) {
 
   async function handleCreate() {
     setCreating(true);
-    await fetch("/api/game", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        durationMinutes: duration,
-        startingChips,
-        teamNames: [team1Name, team2Name],
-        teamColors: ["#ef4444", "#3b82f6"],
-      }),
+    await onCreateGame({
+      durationMinutes: duration,
+      startingChips,
+      teamNames: [team1Name, team2Name],
+      teamColors: ["#ef4444", "#3b82f6"],
     });
     setCreating(false);
   }
 
-  async function handleStart() {
-    await fetch("/api/game/start", { method: "POST" });
+  function handleStart() {
+    onStartGame();
     navigate("/game");
   }
 
-  async function handleReset() {
-    await fetch("/api/game/reset", { method: "POST" });
+  function handleReset() {
+    onResetGame();
   }
 
   if (!game) {

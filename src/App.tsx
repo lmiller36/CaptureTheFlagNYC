@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useSocket } from "./hooks/useSocket";
+import { useGame } from "./hooks/useGame";
 import { useState } from "react";
 import Lobby from "./pages/Lobby";
 import GameView from "./pages/GameView";
 
 export default function App() {
-  const { game, connected, error, captureStation, completeChallenge } = useSocket();
+  const { game, error, createGame, startGame, captureStation, completeChallenge, resetGame } = useGame();
   const [teamId, setTeamId] = useState<string | null>(
     () => localStorage.getItem("teamId")
   );
@@ -22,11 +22,6 @@ export default function App() {
           {error}
         </div>
       )}
-      {!connected && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
-          Connecting...
-        </div>
-      )}
       <Routes>
         <Route
           path="/"
@@ -34,7 +29,14 @@ export default function App() {
             game && game.status !== "lobby" && teamId ? (
               <Navigate to="/game" replace />
             ) : (
-              <Lobby game={game} teamId={teamId} onSelectTeam={selectTeam} />
+              <Lobby
+                game={game}
+                teamId={teamId}
+                onSelectTeam={selectTeam}
+                onCreateGame={createGame}
+                onStartGame={startGame}
+                onResetGame={resetGame}
+              />
             )
           }
         />
