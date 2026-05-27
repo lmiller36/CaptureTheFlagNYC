@@ -32,6 +32,9 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
   const [hiddenChallengeTypes, setHiddenChallengeTypes] = useState<Set<string>>(new Set());
   const [hoveredChallengeId, setHoveredChallengeId] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragStartY = useRef<number | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [revealAll, setRevealAll] = useState(false);
   const [reserveChallenges, setReserveChallenges] = useState<{ id: string; name: string; type: string; rewardDescription: string }[]>([]);
@@ -60,6 +63,8 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
   const availableChallenges = visibleChallenges.filter((c) => !c.completedBy.includes(teamId));
 
   const toggleTab = (tab: "scores" | "challenges") => {
+    setDragOffset(0);
+    handleChallengeHover(null);
     setActiveTab((prev) => (prev === tab ? null : tab));
   };
 
@@ -212,13 +217,35 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
 
         {/* Bottom sheet — Scores or Challenges */}
         <div
-          className={`absolute left-0 right-0 bottom-0 z-[900] bg-zinc-900/97 backdrop-blur-md border-t border-white/10 flex flex-col transition-transform duration-300 ease-out ${
-            activeTab ? "translate-y-0" : "translate-y-full"
-          }`}
-          style={{ maxHeight: "60vh" }}
+          className="absolute left-0 right-0 bottom-0 z-[900] bg-zinc-900/97 backdrop-blur-md border-t border-white/10 flex flex-col"
+          style={{
+            maxHeight: "60vh",
+            transform: activeTab ? `translateY(${dragOffset}px)` : "translateY(100%)",
+            transition: isDragging ? "none" : "transform 300ms ease-out",
+          }}
         >
-          {/* Drag handle */}
-          <div className="flex justify-center pt-2.5 pb-1 shrink-0">
+          {/* Drag handle — touch target for swipe-to-dismiss */}
+          <div
+            className="flex justify-center pt-2.5 pb-3 shrink-0 touch-none"
+            onTouchStart={(e) => {
+              dragStartY.current = e.touches[0].clientY;
+              setIsDragging(true);
+            }}
+            onTouchMove={(e) => {
+              if (dragStartY.current === null) return;
+              const delta = e.touches[0].clientY - dragStartY.current;
+              if (delta > 0) setDragOffset(delta);
+            }}
+            onTouchEnd={() => {
+              if (dragOffset > 80) {
+                handleChallengeHover(null);
+                setActiveTab(null);
+              }
+              setDragOffset(0);
+              setIsDragging(false);
+              dragStartY.current = null;
+            }}
+          >
             <div className="w-10 h-1 rounded-full bg-white/20" />
           </div>
 
@@ -314,6 +341,7 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
                   <button
                     key={c.id}
                     onClick={() => {
+                      handleChallengeHover(null);
                       setSelectedChallengeId(c.id);
                       setSelectedStationId(null);
                       setChallengeStarted(false);
