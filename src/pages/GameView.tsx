@@ -3,6 +3,7 @@ import type { GameState, Challenge, ChallengeType } from "../../shared/types";
 import MapView from "../components/MapView";
 import StationPanel from "../components/StationPanel";
 import GameTimer from "../components/GameTimer";
+import * as store from "../store/gameStore";
 
 const CHALLENGE_LEGEND: { type: ChallengeType; label: string; color: string; symbol: string }[] = [
   { type: "fixed", label: "Fixed", color: "#f59e0b", symbol: "$" },
@@ -129,19 +130,19 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
             <h3 className="text-white text-xs font-bold uppercase tracking-wider mb-3">Debug</h3>
             <div className="space-y-2 mb-4">
               <button
-                onClick={() => fetch("/api/debug/clear-stations", { method: "POST" })}
+                onClick={() => { store.debugClearStations(game); window.location.reload(); }}
                 className="w-full text-left px-3 py-2 rounded bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10"
               >
                 Clear all claimed stations
               </button>
               <button
-                onClick={() => fetch("/api/debug/clear-challenges", { method: "POST" })}
+                onClick={() => { store.debugClearChallenges(game); window.location.reload(); }}
                 className="w-full text-left px-3 py-2 rounded bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10"
               >
                 Clear all completed challenges
               </button>
               <button
-                onClick={() => fetch("/api/debug/reset-chips", { method: "POST" })}
+                onClick={() => { store.debugResetChips(game); window.location.reload(); }}
                 className="w-full text-left px-3 py-2 rounded bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10"
               >
                 Reset chips to starting amount
@@ -158,7 +159,11 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
             <h4 className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-2">Add from Reserve</h4>
             {reserveChallenges.length === 0 ? (
               <button
-                onClick={() => fetch("/api/debug/reserve-challenges").then(r => r.json()).then(setReserveChallenges)}
+                onClick={() => {
+                  const activeIds = new Set(game.challenges.map((c) => c.id));
+                  const available = store.RESERVE_CHALLENGES.filter((c) => !activeIds.has(c.id));
+                  setReserveChallenges(available.map(c => ({ id: c.id, name: c.name, type: c.type, rewardDescription: c.rewardDescription })));
+                }}
                 className="w-full px-3 py-2 rounded bg-white/5 hover:bg-white/10 text-white text-xs border border-white/10"
               >
                 Load reserve challenges
@@ -169,13 +174,12 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
                   <button
                     key={c.id}
                     onClick={() => {
-                      fetch("/api/debug/add-challenge", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ id: c.id }),
-                      }).then(() => {
+                      const challenge = store.RESERVE_CHALLENGES.find((r) => r.id === c.id);
+                      if (challenge) {
+                        store.debugAddChallenge(game, challenge);
                         setReserveChallenges(reserveChallenges.filter(r => r.id !== c.id));
-                      });
+                        window.location.reload();
+                      }
                     }}
                     className="w-full text-left p-2 rounded bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
                   >

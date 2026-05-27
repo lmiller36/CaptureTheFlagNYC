@@ -50,8 +50,8 @@ export default function MapView({ game, teamId, hiddenChallengeTypes, hoveredCha
   const [lineGeo, setLineGeo] = useState<GeoJSON | null>(null);
 
   useEffect(() => {
-    fetch("/manhattan-stations.json").then((r) => r.json()).then(setMapData);
-    fetch("/subway-lines.geojson").then((r) => r.json()).then(setLineGeo);
+    fetch(import.meta.env.BASE_URL + "manhattan-stations.json").then((r) => r.json()).then(setMapData);
+    fetch(import.meta.env.BASE_URL + "subway-lines.geojson").then((r) => r.json()).then(setLineGeo);
   }, []);
 
   useEffect(() => {
