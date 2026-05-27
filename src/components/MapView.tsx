@@ -27,19 +27,7 @@ interface GeoJSON {
   features: GeoJSONFeature[];
 }
 
-// MTA official colors by route symbol
-const ROUTE_COLORS: Record<string, string> = {
-  "1": "#EE352E", "2": "#EE352E", "3": "#EE352E",
-  "4": "#00933C", "5": "#00933C", "6": "#00933C",
-  "7": "#B933AD",
-  "A": "#2850AD", "C": "#2850AD", "E": "#2850AD",
-  "B": "#FF6319", "D": "#FF6319", "F": "#FF6319", "M": "#FF6319",
-  "G": "#6CBE45",
-  "J": "#996633", "Z": "#996633",
-  "L": "#A7A9AC",
-  "N": "#FCCC0A", "Q": "#FCCC0A", "R": "#FCCC0A", "W": "#FCCC0A",
-  "S": "#808183",
-};
+import { ROUTE_COLORS } from "../constants";
 
 interface Props {
   game: GameState;
@@ -57,6 +45,7 @@ export default function MapView({ game, teamId, hiddenChallengeTypes, hoveredCha
   const markersRef = useRef<L.LayerGroup | null>(null);
   const linesRef = useRef<L.LayerGroup | null>(null);
   const prevZoomRef = useRef<{ center: L.LatLng; zoom: number } | null>(null);
+  const challengeMarkersRef = useRef<Map<string, L.Marker>>(new Map());
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [lineGeo, setLineGeo] = useState<GeoJSON | null>(null);
 
@@ -72,6 +61,7 @@ export default function MapView({ game, teamId, hiddenChallengeTypes, hoveredCha
       center: [40.758, -73.985],
       zoom: 13,
       zoomControl: false,
+      preferCanvas: true,
     });
 
     L.tileLayer(
@@ -228,13 +218,12 @@ export default function MapView({ game, teamId, hiddenChallengeTypes, hoveredCha
     });
 
     // Challenge markers (on higher z-index so they're always visible above stations)
+    challengeMarkersRef.current.clear();
     game.challenges
       .filter((c) => !hiddenChallengeTypes.has(c.type))
       .forEach((challenge) => {
         const completed = challenge.completedBy.includes(teamId);
-        const isGrayed = (hoveredChallengeId !== null && challenge.id !== hoveredChallengeId)
-          || (selectedChallengeId !== null && challenge.id !== selectedChallengeId);
-        const iconColor = completed || isGrayed
+        const iconColor = completed
           ? "#666"
           : challenge.type === "multiplier"
           ? "#9333ea"
@@ -243,11 +232,6 @@ export default function MapView({ game, teamId, hiddenChallengeTypes, hoveredCha
           : challenge.type === "variable"
           ? "#2563eb"
           : "#f59e0b";
-
-        const symbol =
-          challenge.type === "steal" ? "!" :
-          challenge.type === "multiplier" ? "×" :
-          challenge.type === "variable" ? "?" : "$";
 
         const marker = L.marker([challenge.lat, challenge.lng], {
           zIndexOffset: 1000,
@@ -258,7 +242,7 @@ export default function MapView({ game, teamId, hiddenChallengeTypes, hoveredCha
               transform: rotate(45deg);
               background: ${iconColor};
               box-shadow: 0 0 8px ${iconColor}, 0 0 16px ${iconColor}55;
-              opacity: ${completed || isGrayed ? 0.3 : 1};
+              opacity: ${completed ? 0.3 : 1};
             "></div>`,
             iconSize: [22, 22],
             iconAnchor: [11, 11],
@@ -271,8 +255,44 @@ export default function MapView({ game, teamId, hiddenChallengeTypes, hoveredCha
         );
         marker.on("click", () => onSelectChallenge(challenge.id));
         marker.addTo(markersRef.current!);
+        challengeMarkersRef.current.set(challenge.id, marker);
       });
-  }, [game, teamId, mapData, lineGeo, hiddenChallengeTypes, hoveredChallengeId, revealAll, onSelectStation, onSelectChallenge]);
+  }, [game, teamId, mapData, lineGeo, hiddenChallengeTypes, revealAll, onSelectStation, onSelectChallenge]);
+
+  useEffect(() => {
+    challengeMarkersRef.current.forEach((marker, challengeId) => {
+      const challenge = game.challenges.find((c) => c.id === challengeId);
+      if (!challenge) return;
+      const completed = challenge.completedBy.includes(teamId);
+      const isGrayed =
+        (hoveredChallengeId !== null && challengeId !== hoveredChallengeId) ||
+        (selectedChallengeId !== null && challengeId !== selectedChallengeId);
+      const iconColor =
+        completed || isGrayed
+          ? "#666"
+          : challenge.type === "multiplier"
+          ? "#9333ea"
+          : challenge.type === "steal"
+          ? "#dc2626"
+          : challenge.type === "variable"
+          ? "#2563eb"
+          : "#f59e0b";
+      marker.setIcon(
+        L.divIcon({
+          className: "challenge-marker",
+          html: `<div style="
+            width: 18px; height: 18px;
+            transform: rotate(45deg);
+            background: ${iconColor};
+            box-shadow: 0 0 8px ${iconColor}, 0 0 16px ${iconColor}55;
+            opacity: ${completed || isGrayed ? 0.3 : 1};
+          "></div>`,
+          iconSize: [22, 22],
+          iconAnchor: [11, 11],
+        })
+      );
+    });
+  }, [hoveredChallengeId, selectedChallengeId, game.challenges, teamId]);
 
   return <div id="game-map" className="h-full w-full" />;
 }
