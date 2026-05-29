@@ -12,6 +12,8 @@ const CHALLENGE_LEGEND: { type: ChallengeType; label: string; color: string; sym
   { type: "steal", label: "Steal", color: "#dc2626", symbol: "!" },
 ];
 
+type ActiveTab = "scores" | "challenges" | null;
+
 interface Props {
   game: GameState;
   teamId: string;
@@ -20,11 +22,9 @@ interface Props {
 }
 
 export default function GameView({ game, teamId, onCapture, onChallenge }: Props) {
-  const isMobile = window.innerWidth < 768;
+  const [activeTab, setActiveTab] = useState<ActiveTab>(null);
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
-  const [leftCollapsed, setLeftCollapsed] = useState(isMobile);
-  const [rightCollapsed, setRightCollapsed] = useState(isMobile);
   const [variableResult, setVariableResult] = useState(0);
   const [completing, setCompleting] = useState(false);
   const [challengeStarted, setChallengeStarted] = useState(false);
@@ -32,6 +32,12 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
   const [hiddenChallengeTypes, setHiddenChallengeTypes] = useState<Set<string>>(new Set());
   const [hoveredChallengeId, setHoveredChallengeId] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragStartY = useRef<number | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  const [revealAll, setRevealAll] = useState(false);
+  const [reserveChallenges, setReserveChallenges] = useState<{ id: string; name: string; type: string; rewardDescription: string }[]>([]);
 
   const handleChallengeHover = useCallback((id: string | null) => {
     if (hoverTimeoutRef.current) {
@@ -44,9 +50,6 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
       hoverTimeoutRef.current = setTimeout(() => setHoveredChallengeId(null), 100);
     }
   }, []);
-  const [showDebug, setShowDebug] = useState(false);
-  const [revealAll, setRevealAll] = useState(false);
-  const [reserveChallenges, setReserveChallenges] = useState<{ id: string; name: string; type: string; rewardDescription: string }[]>([]);
 
   const myTeam = game.teams.find((t) => t.id === teamId)!;
   const selectedStation = selectedStationId
@@ -58,6 +61,12 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
 
   const visibleChallenges = game.challenges;
   const availableChallenges = visibleChallenges.filter((c) => !c.completedBy.includes(teamId));
+
+  const toggleTab = (tab: "scores" | "challenges") => {
+    setDragOffset(0);
+    handleChallengeHover(null);
+    setActiveTab((prev) => (prev === tab ? null : tab));
+  };
 
   async function handleCompleteChallenge(challenge: Challenge) {
     setCompleting(true);
@@ -74,75 +83,8 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
   }
 
   return (
-    <div className="flex-1 flex h-full relative">
-      {/* Left panel - Scoreboard */}
-      <div className={`shrink-0 z-[1000] flex flex-col relative bg-black/85 backdrop-blur-sm border-r border-white/10 transition-all duration-200 ${leftCollapsed ? "w-10" : "w-44 md:w-56"}`}>
-        {leftCollapsed ? (
-          <button
-            onClick={() => { setLeftCollapsed(false); if (isMobile) setRightCollapsed(true); }}
-            className="flex-1 flex items-center justify-center text-white/60 hover:text-white text-sm"
-            title="Show scores"
-          >
-            <span className="[writing-mode:vertical-rl] rotate-180 text-xs font-semibold tracking-wider">SCORES</span>
-          </button>
-        ) : (
-          <>
-            <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
-              <span className="text-white/80 text-xs font-semibold tracking-wider uppercase">Scores</span>
-              <button onClick={() => setLeftCollapsed(true)} className="text-white/40 hover:text-white text-2xl px-2 py-1">&lsaquo;</button>
-            </div>
-
-            {/* Timer */}
-            <div className="px-3 py-2 border-b border-white/10 text-center">
-              <GameTimer game={game} />
-            </div>
-
-            {/* Team standings */}
-            <div className="px-3 pr-5 py-2 space-y-2 border-b border-white/10">
-              {[...game.teams].sort((a, b) => b.stationsHeld - a.stationsHeld).map((team) => (
-                <div key={team.id} className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-white text-xs font-semibold truncate">
-                        {team.name}
-                        {team.id === teamId && <span className="text-white/40 ml-1">(you)</span>}
-                      </span>
-                      <span className="text-white text-sm font-bold ml-2">{team.stationsHeld}</span>
-                    </div>
-                    <span className="text-white/40 text-[10px]">{team.chips} chips</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Activity feed */}
-            <div className="flex-1 overflow-y-auto px-3 pr-5 py-2 space-y-1.5">
-              <span className="text-white/40 text-[10px] uppercase font-semibold">Activity</span>
-              {game.activityLog.map((entry) => {
-                const team = game.teams.find((t) => t.id === entry.teamId);
-                return (
-                  <div key={entry.id} className="flex items-start gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full mt-1 shrink-0" style={{ backgroundColor: team?.color || "#666" }} />
-                    <span className="text-white/60 text-[10px] leading-tight">{entry.message}</span>
-                  </div>
-                );
-              })}
-              {game.activityLog.length === 0 && (
-                <span className="text-white/30 text-[10px]">No activity yet</span>
-              )}
-            </div>
-            {/* Edge close bar */}
-            <button
-              onClick={() => setLeftCollapsed(true)}
-              className="absolute right-0 top-0 bottom-0 w-3 bg-white/5 hover:bg-white/15 transition-colors cursor-pointer"
-              title="Close scores"
-            />
-          </>
-        )}
-      </div>
-
-      {/* Center - Map */}
+    <div className="flex-1 flex flex-col h-full">
+      {/* Map area */}
       <div className="flex-1 relative overflow-hidden">
         <MapView
           game={game}
@@ -154,40 +96,24 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
           onSelectStation={(id) => {
             setSelectedStationId(id);
             setSelectedChallengeId(null);
+            setActiveTab(null);
           }}
           onSelectChallenge={(id) => {
             setSelectedChallengeId(id);
             setSelectedStationId(null);
             setChallengeStarted(false);
+            setActiveTab(null);
           }}
         />
 
-        {/* Challenge legend */}
-        <div className="absolute bottom-3 left-3 z-[999] bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 flex gap-2">
-          {CHALLENGE_LEGEND.map(({ type, label, color, symbol }) => {
-            const hidden = hiddenChallengeTypes.has(type);
-            return (
-              <button
-                key={type}
-                onClick={() => {
-                  const next = new Set(hiddenChallengeTypes);
-                  if (hidden) next.delete(type);
-                  else next.add(type);
-                  setHiddenChallengeTypes(next);
-                }}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded transition-all ${hidden ? "opacity-30" : "opacity-100"}`}
-                title={`${hidden ? "Show" : "Hide"} ${label} challenges`}
-              >
-                <div
-                  className="w-4 h-4 flex items-center justify-center rounded-sm text-white text-[10px] font-bold"
-                  style={{ backgroundColor: color, transform: "rotate(45deg)" }}
-                >
-                  <span style={{ transform: "rotate(-45deg)" }}>{symbol}</span>
-                </div>
-                <span className="text-white text-[10px] font-medium">{label}</span>
-              </button>
-            );
-          })}
+        {/* Top HUD — timer + my chips */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[999] pointer-events-none">
+          <div className="bg-black/75 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2">
+            <GameTimer game={game} />
+            <span className="text-white/30 text-xs">·</span>
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: myTeam.color }} />
+            <span className="text-white text-xs font-bold">{myTeam.chips} chips</span>
+          </div>
         </div>
 
         {/* Debug gear icon */}
@@ -207,7 +133,6 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
         {showDebug && (
           <div className="absolute top-14 left-3 z-[999] bg-black/90 backdrop-blur-sm rounded-lg border border-white/10 p-3 w-72 max-h-[80vh] overflow-y-auto">
             <h3 className="text-white text-xs font-bold uppercase tracking-wider mb-3">Debug</h3>
-
             <div className="space-y-2 mb-4">
               <button
                 onClick={() => { store.debugClearStations(game); window.location.reload(); }}
@@ -236,7 +161,6 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
                 {revealAll ? "Hide challenge details" : "Reveal ALL challenges"}
               </button>
             </div>
-
             <h4 className="text-white/60 text-[10px] font-bold uppercase tracking-wider mb-2">Add from Reserve</h4>
             {reserveChallenges.length === 0 ? (
               <button
@@ -286,10 +210,186 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
 
         {/* Earned chips toast */}
         {lastEarned !== null && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[2000] bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg font-bold">
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[2000] bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg font-bold">
             +{lastEarned} chips!
           </div>
         )}
+
+        {/* Bottom sheet — Scores or Challenges */}
+        <div
+          className="absolute left-0 right-0 bottom-0 z-[900] bg-zinc-900/97 backdrop-blur-md border-t border-white/10 flex flex-col"
+          style={{
+            maxHeight: "60vh",
+            transform: activeTab ? `translateY(${dragOffset}px)` : "translateY(100%)",
+            transition: isDragging ? "none" : "transform 300ms ease-out",
+          }}
+        >
+          {/* Drag handle — touch target for swipe-to-dismiss */}
+          <div
+            className="flex justify-center pt-2.5 pb-3 shrink-0 touch-none"
+            onTouchStart={(e) => {
+              dragStartY.current = e.touches[0].clientY;
+              setIsDragging(true);
+            }}
+            onTouchMove={(e) => {
+              if (dragStartY.current === null) return;
+              const delta = e.touches[0].clientY - dragStartY.current;
+              if (delta > 0) setDragOffset(delta);
+            }}
+            onTouchEnd={() => {
+              if (dragOffset > 80) {
+                handleChallengeHover(null);
+                setActiveTab(null);
+              }
+              setDragOffset(0);
+              setIsDragging(false);
+              dragStartY.current = null;
+            }}
+          >
+            <div className="w-10 h-1 rounded-full bg-white/20" />
+          </div>
+
+          {/* Scores sheet */}
+          {activeTab === "scores" && (
+            <div className="flex-1 overflow-y-auto px-4 pb-4">
+              {/* Standings */}
+              <div className="space-y-3 py-3 border-b border-white/10">
+                {[...game.teams].sort((a, b) => b.stationsHeld - a.stationsHeld).map((team, i) => (
+                  <div key={team.id} className="flex items-center gap-3">
+                    <span className="text-white/30 text-xs w-4 text-right">{i + 1}</span>
+                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: team.color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-white text-sm font-semibold truncate">
+                          {team.name}
+                          {team.id === teamId && <span className="text-white/40 ml-1 text-xs font-normal">(you)</span>}
+                        </span>
+                        <span className="text-white font-bold ml-2">{team.stationsHeld}</span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <div
+                          className="h-1 rounded-full bg-current opacity-40 transition-all"
+                          style={{
+                            width: `${Math.min(100, (team.stationsHeld / Math.max(1, game.stations.length)) * 100)}%`,
+                            color: team.color,
+                            backgroundColor: team.color,
+                            minWidth: team.stationsHeld > 0 ? "4px" : "0",
+                          }}
+                        />
+                        <span className="text-white/30 text-[10px]">{team.chips} chips</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Activity feed */}
+              <div className="pt-3">
+                <span className="text-white/40 text-[10px] uppercase font-semibold tracking-wider">Activity</span>
+                <div className="mt-2 space-y-2">
+                  {game.activityLog.map((entry) => {
+                    const team = game.teams.find((t) => t.id === entry.teamId);
+                    return (
+                      <div key={entry.id} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: team?.color || "#666" }} />
+                        <span className="text-white/60 text-xs leading-snug">{entry.message}</span>
+                      </div>
+                    );
+                  })}
+                  {game.activityLog.length === 0 && (
+                    <span className="text-white/30 text-xs">No activity yet</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Challenges sheet */}
+          {activeTab === "challenges" && (
+            <div className="flex-1 overflow-y-auto pb-4">
+              {/* Challenge type filters */}
+              <div className="flex gap-2 px-4 py-3 border-b border-white/10 shrink-0">
+                {CHALLENGE_LEGEND.map(({ type, label, color, symbol }) => {
+                  const hidden = hiddenChallengeTypes.has(type);
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        const next = new Set(hiddenChallengeTypes);
+                        if (hidden) next.delete(type);
+                        else next.add(type);
+                        setHiddenChallengeTypes(next);
+                      }}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all ${
+                        hidden ? "border-white/10 opacity-40" : "border-white/20 opacity-100"
+                      }`}
+                    >
+                      <div
+                        className="w-3 h-3 rounded-sm flex items-center justify-center text-white text-[8px] font-bold"
+                        style={{ backgroundColor: color, transform: "rotate(45deg)" }}
+                      >
+                        <span style={{ transform: "rotate(-45deg)" }}>{symbol}</span>
+                      </div>
+                      <span className="text-white text-[10px] font-medium">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="px-4 pt-3 space-y-2">
+                {availableChallenges.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => {
+                      handleChallengeHover(null);
+                      setSelectedChallengeId(c.id);
+                      setSelectedStationId(null);
+                      setChallengeStarted(false);
+                      setActiveTab(null);
+                    }}
+                    onMouseEnter={() => handleChallengeHover(c.id)}
+                    onMouseLeave={() => handleChallengeHover(null)}
+                    className="w-full text-left p-3 rounded-xl border border-white/10 active:border-white/30 transition-colors"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="text-white text-sm font-medium leading-tight">
+                        {revealAll ? c.name : c.type.charAt(0).toUpperCase() + c.type.slice(1) + " Challenge"}
+                      </span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
+                        c.type === "fixed" ? "bg-amber-900/60 text-amber-300" :
+                        c.type === "variable" ? "bg-blue-900/60 text-blue-300" :
+                        c.type === "multiplier" ? "bg-purple-900/60 text-purple-300" :
+                        "bg-red-900/60 text-red-300"
+                      }`}>
+                        {c.type}
+                      </span>
+                    </div>
+                    {(revealAll || !c.customScoring?.startsWith("call-your-shot")) && (
+                      <p className="text-white/40 text-xs mt-1">{c.rewardDescription}</p>
+                    )}
+                  </button>
+                ))}
+
+                {availableChallenges.length === 0 && (
+                  <p className="text-white/30 text-sm text-center py-6">No challenges available yet</p>
+                )}
+
+                {visibleChallenges.filter((c) => c.completedBy.includes(teamId)).length > 0 && (
+                  <>
+                    <div className="pt-3 pb-1">
+                      <span className="text-white/30 text-[10px] uppercase font-semibold tracking-wider">Completed</span>
+                    </div>
+                    {visibleChallenges.filter((c) => c.completedBy.includes(teamId)).map((c) => (
+                      <div key={c.id} className="p-3 rounded-xl border border-white/5 opacity-40">
+                        <span className="text-white text-sm line-through">{c.name}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Station capture panel */}
         {selectedStation && (
@@ -380,90 +480,43 @@ export default function GameView({ game, teamId, onCapture, onChallenge }: Props
         )}
       </div>
 
-      {/* Right panel - Challenges */}
-      <div className={`shrink-0 z-[1000] flex flex-col relative bg-black/85 backdrop-blur-sm border-l border-white/10 transition-all duration-200 ${rightCollapsed ? "w-10" : "w-48 md:w-60"}`}>
-        {rightCollapsed ? (
-          <button
-            onClick={() => { setRightCollapsed(false); if (isMobile) setLeftCollapsed(true); }}
-            className="flex-1 flex items-center justify-center text-white/60 hover:text-white relative"
-            title="Show challenges"
-          >
-            <span className="[writing-mode:vertical-rl] text-xs font-semibold tracking-wider">CHALLENGES</span>
-            {availableChallenges.length > 0 && (
-              <span className="absolute top-3 right-2 bg-yellow-500 text-black text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {availableChallenges.length}
+      {/* Bottom tab bar */}
+      <div
+        className="shrink-0 flex bg-black/95 backdrop-blur-sm border-t border-white/10"
+        style={{ height: "calc(56px + env(safe-area-inset-bottom))", paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <button
+          onClick={() => toggleTab("scores")}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+            activeTab === "scores" ? "text-white" : "text-white/40"
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span className="text-[10px] font-medium">Scores</span>
+        </button>
+
+        <button
+          onClick={() => toggleTab("challenges")}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors relative ${
+            activeTab === "challenges" ? "text-white" : "text-white/40"
+          }`}
+        >
+          <div className="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            {availableChallenges.length > 0 && activeTab !== "challenges" && (
+              <span className="absolute -top-1 -right-2 bg-yellow-500 text-black text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {availableChallenges.length > 9 ? "9+" : availableChallenges.length}
               </span>
             )}
-          </button>
-        ) : (
-          <>
-            <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
-              <span className="text-white/80 text-xs font-semibold tracking-wider uppercase">
-                Challenges <span className="text-yellow-400">({availableChallenges.length})</span>
-              </span>
-              <button onClick={() => setRightCollapsed(true)} className="text-white/40 hover:text-white text-2xl px-2 py-1">&rsaquo;</button>
-            </div>
-
-            {/* My chips */}
-            <div className="px-3 py-2 border-b border-white/10 flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: myTeam.color }} />
-              <span className="text-white text-xs font-bold">{myTeam.chips} chips</span>
-            </div>
-
-            {/* Challenge list */}
-            <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5">
-              {availableChallenges.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => { setSelectedChallengeId(c.id); setSelectedStationId(null); setChallengeStarted(false); }}
-                  onMouseEnter={() => handleChallengeHover(c.id)}
-                  onMouseLeave={() => handleChallengeHover(null)}
-                  className="w-full text-left p-2 rounded-lg border border-white/10 hover:border-white/30 transition-colors"
-                >
-                  <div className="flex justify-between items-start gap-1">
-                    <span className="text-white text-xs font-medium leading-tight">
-                      {revealAll ? c.name : c.type.charAt(0).toUpperCase() + c.type.slice(1) + " Challenge"}
-                    </span>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
-                      c.type === "fixed" ? "bg-green-900/50 text-green-300" :
-                      c.type === "variable" ? "bg-blue-900/50 text-blue-300" :
-                      c.type === "multiplier" ? "bg-purple-900/50 text-purple-300" :
-                      "bg-red-900/50 text-red-300"
-                    }`}>
-                      {c.type}
-                    </span>
-                  </div>
-                  {(revealAll || !c.customScoring?.startsWith("call-your-shot")) && (
-                    <p className="text-white/40 text-[10px] mt-0.5">{c.rewardDescription}</p>
-                  )}
-                </button>
-              ))}
-              {availableChallenges.length === 0 && (
-                <p className="text-white/30 text-xs text-center py-4">No challenges available yet</p>
-              )}
-
-              {/* Completed section */}
-              {visibleChallenges.filter((c) => c.completedBy.includes(teamId)).length > 0 && (
-                <>
-                  <div className="pt-2">
-                    <span className="text-white/30 text-[10px] uppercase font-semibold">Completed</span>
-                  </div>
-                  {visibleChallenges.filter((c) => c.completedBy.includes(teamId)).map((c) => (
-                    <div key={c.id} className="p-2 rounded-lg border border-white/5 opacity-40">
-                      <span className="text-white text-xs line-through">{c.name}</span>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-            {/* Edge close bar */}
-            <button
-              onClick={() => setRightCollapsed(true)}
-              className="absolute left-0 top-0 bottom-0 w-3 bg-white/5 hover:bg-white/15 transition-colors cursor-pointer"
-              title="Close challenges"
-            />
-          </>
-        )}
+          </div>
+          <span className="text-[10px] font-medium">Challenges</span>
+        </button>
       </div>
     </div>
   );

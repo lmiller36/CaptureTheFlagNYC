@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ROUTE_COLORS } from "../constants";
 import type { GameState, Station } from "../../shared/types";
 
 interface Props {
@@ -32,7 +33,20 @@ export default function StationPanel({ station, game, teamId, onCapture, onClose
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="font-bold text-lg">{station.name}</h3>
-          <p className="text-xs text-gray-500">{station.lines.join(", ")} line{station.lines.length > 1 ? "s" : ""}</p>
+          <div className="flex gap-1 mt-1 flex-wrap">
+            {station.lines.map((line) => (
+              <span
+                key={line}
+                className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
+                style={{
+                  backgroundColor: ROUTE_COLORS[line] ?? "#808183",
+                  color: ["N", "Q", "R", "W"].includes(line) ? "#000" : "#fff",
+                }}
+              >
+                {line}
+              </span>
+            ))}
+          </div>
         </div>
         <button onClick={onClose} className="text-gray-400 text-xl leading-none">&times;</button>
       </div>

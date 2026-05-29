@@ -9,6 +9,9 @@ export default defineConfig({
     port: 5173,
     host: "0.0.0.0",
     allowedHosts: "all",
+    watch: {
+      usePolling: true,
+    },
     proxy: {
       "/api": "http://localhost:3001",
       "/socket.io": {
